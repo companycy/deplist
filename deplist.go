@@ -6,6 +6,7 @@ import (
 	"go/build"
 	"log"
 	"os"
+	"os/exec"
 	"sort"
 )
 
@@ -38,8 +39,25 @@ func (c *context) find(name, dir string, o opts) error {
 	}
 	pkg, err := c.ctx.Import(name, dir, 0)
 	if err != nil {
+		bin, err := exec.LookPath("go")
+		if err != nil {
+			return err
+		}
+		cmd := exec.Command(bin, "get", "-v", name)
+		err = cmd.Run()
+		if err != nil {
+			return err
+		} else {
+			fmt.Println("successfully download dependency: " + name)
+		}
+	}
+
+	// try again
+	pkg, err = c.ctx.Import(name, dir, 0)
+	if err != nil {
 		return err
 	}
+
 	if pkg.Goroot && o&optStd == 0 {
 		return nil
 	}
